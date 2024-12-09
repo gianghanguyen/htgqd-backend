@@ -16,11 +16,6 @@ Run server with `python`
 python3 main.py
 ```
 
-or with `sanic`
-```shell
-sanic main.app -H 0.0.0.0 -p 8096 -w 4 -r
-```
-
 ## Deployment
 ```shell
 docker compose up
@@ -28,4 +23,7 @@ docker compose up
 
 ## Documentation
 Access swagger document via [http://0.0.0.0:8096/docs](http://0.0.0.0:8096/docs)
- 
+
+## MongoDB
+Database: job_db
+Collection: job, company, point (empty)

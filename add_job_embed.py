@@ -5,7 +5,7 @@ from multiprocessing import Pool, cpu_count
 # Kết nối tới MongoDB
 client = MongoClient("mongodb://localhost:27017/")
 db = client["job_db"]
-collection = db["job"]
+collection = db["job_reduce"]
 
 # Khởi tạo model SentenceTransformer
 model = SentenceTransformer('all-MiniLM-L6-v2')
