@@ -2,3 +2,9 @@
 __pycache__/
 .env
 venv
+add_job_embed.py
+deduplicate.py
+delete_no_company_job.py
+job_reduce.py
+t-d.py
+update_job_data.py

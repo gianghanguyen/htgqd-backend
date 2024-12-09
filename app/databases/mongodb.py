@@ -1,7 +1,6 @@
 from pymongo import MongoClient
 
 from app.constants.mongodb_constants import MongoCollections
-from app.models.market_info import MarketInfo
 from app.utils.logger_utils import get_logger
 from config import MongoDBConfig
 
@@ -22,18 +21,6 @@ class MongoDB:
         self._job_col = self.db[MongoCollections.job]
         self._company_col = self.db[MongoCollections.company]
 
-    def get_data(self, filter_=None, projection=None):
-        try:
-            if not filter_:
-                filter_ = {}
-            cursor = self._example_col.find(filter_, projection=projection)
-            data = []
-            for doc in cursor:
-                data.append(MarketInfo().from_dict(doc))
-            return data
-        except Exception as ex:
-            logger.exception(ex)
-        return []
     
     def get_job(self, filter_=None, projection=None):
         try:
