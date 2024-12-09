@@ -11,7 +11,8 @@ class MongoDB:
     def __init__(self, connection_url=None):
         if connection_url is None:
             # connection_url = f'mongodb://{MongoDBConfig.USERNAME}:{MongoDBConfig.PASSWORD}@{MongoDBConfig.HOST}:{MongoDBConfig.PORT}'
-            connection_url = f'mongodb://{MongoDBConfig.HOST}:{MongoDBConfig.PORT}'
+            # connection_url = f'mongodb://{MongoDBConfig.HOST}:{MongoDBConfig.PORT}'
+            connection_url = MongoDBConfig.CONNECTION_STRING
 
         self.connection_url = connection_url.split('@')[-1]
         self.client = MongoClient(connection_url)
