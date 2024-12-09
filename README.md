@@ -16,14 +16,10 @@ Run server with `python`
 python3 main.py
 ```
 
-## Deployment
-```shell
-docker compose up
-```
-
 ## Documentation
-Access swagger document via [http://0.0.0.0:8096/docs](http://0.0.0.0:8096/docs)
+Access swagger document via [http://127.0.0.1:8080/docs](http://127.0.0.1:8080/docs)
 
 ## MongoDB
 Database: job_db
+
 Collection: job, company, point (empty)
