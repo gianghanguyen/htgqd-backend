@@ -75,23 +75,12 @@ def job_worker_process(args):
         job_point['job_title_point'] = job_title_point[job['job_id']] / max_job_title_point
         job_point['experience_point'] = 1 if job['years_of_experience'] >= experience else 0
         job_point['salary_point'] = job['salary'] / max_salary
-
-        # Áp dụng trọng số cho từng yếu tố và tính tổng điểm
-        job_point['weighted_location_point'] = location_weight * job_point['location_point']
-        job_point['weighted_company_size_point'] = company_size_weight * job_point['company_size_point']
-        job_point['weighted_job_title_point'] = job_title_weight * job_point['job_title_point']
-        job_point['weighted_experience_point'] = experience_weight * job_point['experience_point']
-        job_point['weighted_salary_point'] = salary_weight * job_point['salary_point']
-        
-        # Tính tổng điểm
-        job_point['point'] = job_point['weighted_location_point'] + job_point['weighted_company_size_point'] + job_point['weighted_job_title_point'] + job_point['weighted_experience_point'] + job_point['weighted_salary_point']
-
+        job_point['point'] = location_weight * job_point['location_point'] + company_size_weight * job_point['company_size_point'] + job_title_weight * job_point['job_title_point'] + experience_weight * job_point['experience_point'] + salary_weight * job_point['salary_point']
         job_points.append(job_point)
+        print(f"Job ID: {job['job_id']} - Point: {job_point['point']}")
 
-    # Sắp xếp các công việc theo điểm từ cao đến thấp
-    sorted_job_points = sorted(job_points, key=lambda x: x['point'], reverse=True)
-    return sorted_job_points
-
+    mongo_db.insert_point(job_points)
+    return
 
 @calculate_bp.route('')
 @openapi.definition(
@@ -139,28 +128,24 @@ async def calculate(request: Request, query: CalculateQuery):
         model = SentenceTransformer('all-MiniLM-L6-v2')
         job_title_embeded = model.encode(job_title)
 
-        job_batches_with_args = [(job_batch, job_title_embeded, experience, location_point, company_size_point, location_weight, company_size_weight, job_title_weight, experience_weight, salary_weight) for job_batch in job_batches]
-        
-        with ThreadPoolExecutor(max_workers=WORKER_NUM) as executor:
-            futures = [executor.submit(job_worker_process, args) for args in job_batches_with_args]
-        
-        all_sorted_job_points = []
-        for future in as_completed(futures):
-            try:
-                sorted_job_points = future.result()
-                all_sorted_job_points.extend(sorted_job_points)
-            except Exception as e:
-                logger.error(f"Error in one of the worker jobs: {e}")
-                raise exceptions.ServerError("Error occurred during job execution")
-        
-        # Select top 50 jobs
-        top_50_jobs = all_sorted_job_points[:50]
-
+      job_batches_with_args = [(job_batch, job_title_embeded, experience, location_point, company_size_point, location_weight, company_size_weight, job_title_weight, experience_weight, salary_weight) for job_batch in job_batches]
+      # with Pool(WORKER_NUM) as pool:
+      #     pool.starmap(job_worker_process, job_batches_with_args)
+      # with ProcessPoolExecutor(max_workers=WORKER_NUM) as executor:
+      #   executor.map(lambda args: job_worker_process(args), job_batches_with_args)
+      with ThreadPoolExecutor(max_workers=WORKER_NUM) as executor:
+        futures = [executor.submit(job_worker_process, args) for args in job_batches_with_args]
+      for future in as_completed(futures):
+        try:
+            # Dùng result để kiểm tra nếu có exception trong mỗi công việc
+            future.result()
+        except Exception as e:
+            logger.error(f"Error in one of the worker jobs: {e}")
+            raise exceptions.ServerError("Error occurred during job execution")
     except Exception as e:
         logger.error(f"Error calculating job point: {e}")
         raise exceptions.ServerError("Error calculating job point")
 
     return json({
-        'result': 'success',
-        'top_50_jobs': top_50_jobs
+        'result': 'success'
     })
