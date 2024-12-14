@@ -82,16 +82,35 @@ def job_worker_process(args):
         job_point['weighted_job_title_point'] = job_title_weight * job_point['job_title_point']
         job_point['weighted_experience_point'] = experience_weight * job_point['experience_point']
         job_point['weighted_salary_point'] = salary_weight * job_point['salary_point']
-        
-        # Tính tổng điểm
-        job_point['point'] = job_point['weighted_location_point'] + job_point['weighted_company_size_point'] + job_point['weighted_job_title_point'] + job_point['weighted_experience_point'] + job_point['weighted_salary_point']
-
         job_points.append(job_point)
+
+    weighted_ideal_solution = {
+        'weighted_location_point': max(job_point['weighted_location_point'] for job_point in job_points),
+        'weighted_company_size_point': max(job_point['weighted_company_size_point'] for job_point in job_points),
+        'weighted_job_title_point': max(job_point['weighted_job_title_point'] for job_point in job_points),
+        'weighted_experience_point': max(job_point['weighted_experience_point'] for job_point in job_points),
+        'weighted_salary_point': max(job_point['weighted_salary_point'] for job_point in job_points),
+    }
+
+    weighted_negative_ideal_solution = {
+        'weighted_location_point': min(job_point['weighted_location_point'] for job_point in job_points),
+        'weighted_company_size_point': min(job_point['weighted_company_size_point'] for job_point in job_points),
+        'weighted_job_title_point': min(job_point['weighted_job_title_point'] for job_point in job_points),
+        'weighted_experience_point': min(job_point['weighted_experience_point'] for job_point in job_points),
+        'weighted_salary_point': min(job_point['weighted_salary_point'] for job_point in job_points),
+    }
+
+    for job_point in job_points:
+        job_point['distance_to_weighted_ideal'] = sum((job_point[factor] - weighted_ideal_solution[factor]) ** 2 for factor in weighted_ideal_solution) ** 0.5
+        job_point['distance_to_weighted_negative_ideal'] = sum((job_point[factor] - weighted_negative_ideal_solution[factor]) ** 2 for factor in weighted_negative_ideal_solution) ** 0.5
+        # Tính tổng điểm (similarity to the ideal solution)
+        job_point['point'] = job_point['distance_to_weighted_negative_ideal'] / (job_point['distance_to_weighted_ideal'] + job_point['distance_to_weighted_negative_ideal'])
+
     mongo_db.insert_point(job_points)
 
     # Sắp xếp các công việc theo điểm từ cao đến thấp
     sorted_job_points = sorted(job_points, key=lambda x: x['point'], reverse=True)
-    return sorted_job_points
+    return sorted_job_points, weighted_ideal_solution, weighted_negative_ideal_solution
 
 
 @calculate_bp.route('')
@@ -152,9 +171,11 @@ async def calculate(request: Request, query: CalculateQuery):
             futures = [executor.submit(job_worker_process, args) for args in job_batches_with_args]
         
         all_sorted_job_points = []
+        weighted_ideal_solution = None
+        weighted_negative_ideal_solution = None
         for future in as_completed(futures):
             try:
-                sorted_job_points = future.result()
+                sorted_job_points, weighted_ideal_solution, weighted_negative_ideal_solution = future.result()
                 all_sorted_job_points.extend(sorted_job_points)
             except Exception as e:
                 logger.error(f"Error in one of the worker jobs: {e}")
@@ -169,5 +190,7 @@ async def calculate(request: Request, query: CalculateQuery):
 
     return json({
         'result': 'success',
-        'top_50_jobs': top_50_jobs
+        'top_50_jobs': top_50_jobs,
+        'weighted_ideal_solution': weighted_ideal_solution,
+        'weighted_negative_ideal_solution': weighted_negative_ideal_solution
     })
