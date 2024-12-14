@@ -8,7 +8,7 @@ cp .env.example .env
 
 Install dependencies
 ```shell
-pip3 install -r requrements.txt
+pip install -r requirements.txt
 ```
 
 Run server with `python`
