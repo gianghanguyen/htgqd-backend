@@ -73,7 +73,7 @@ def job_worker_process(args):
         job_point['location_point'] = location_point[job['company_id']]
         job_point['company_size_point'] = company_size_point[job['company_id']]
         job_point['job_title_point'] = job_title_point[job['job_id']] / max_job_title_point
-        job_point['experience_point'] = 1 if job['years_of_experience'] >= experience else 0
+        job_point['experience_point'] = 1 if job['years_of_experience'] <= experience else 0
         job_point['salary_point'] = job['salary'] / max_salary
 
         # Áp dụng trọng số cho từng yếu tố và tính tổng điểm
