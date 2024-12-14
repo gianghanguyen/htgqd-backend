@@ -81,15 +81,6 @@ def job_worker_process(args):
         job_point['job_title_point'] = job_title_point[job['job_id']] / max_job_title_point
         job_point['experience_point'] = 1 if job['years_of_experience'] <= experience else 0
         job_point['salary_point'] = job['salary'] / max_salary
-<<<<<<< HEAD
-        job_point['point'] = (
-            location_weight * job_point['location_point']
-            + company_size_weight * job_point['company_size_point']
-            + job_title_weight * job_point['job_title_point']
-            + experience_weight * job_point['experience_point']
-            + salary_weight * job_point['salary_point']
-        )
-=======
 
         # Áp dụng trọng số cho từng yếu tố và tính tổng điểm
         job_point['weighted_location_point'] = location_weight * job_point['location_point']
@@ -97,7 +88,6 @@ def job_worker_process(args):
         job_point['weighted_job_title_point'] = job_title_weight * job_point['job_title_point']
         job_point['weighted_experience_point'] = experience_weight * job_point['experience_point']
         job_point['weighted_salary_point'] = salary_weight * job_point['salary_point']
->>>>>>> fe7677ce451f4d1aadfb3b50db3a127aefb9f92f
         job_points.append(job_point)
 
     weighted_ideal_solution = {
@@ -182,28 +172,6 @@ async def calculate(request: Request, query: CalculateQuery):
         model = SentenceTransformer('all-MiniLM-L6-v2')
         job_title_embeded = model.encode(job_title)
 
-<<<<<<< HEAD
-        job_batches_with_args = [
-            (
-                job_batch, job_title_embeded, experience,
-                location_point, company_size_point,
-                location_weight, company_size_weight,
-                job_title_weight, experience_weight, salary_weight
-            )
-            for job_batch in job_batches
-        ]
-
-        with ThreadPoolExecutor(max_workers=WORKER_NUM) as executor:
-            futures = [executor.submit(job_worker_process, args) for args in job_batches_with_args]
-
-        for future in as_completed(futures):
-            try:
-                job_points = future.result()  # Thu kết quả từ mỗi worker
-                all_job_points.extend(job_points)  # Gộp vào danh sách chung
-            except Exception as e:
-                logger.error(f"Error in one of the worker jobs: {e}")
-                raise exceptions.ServerError("Error occurred during job execution")
-=======
         job_batches_with_args = [(job_batch, job_title_embeded, experience, location_point, company_size_point, location_weight, company_size_weight, job_title_weight, experience_weight, salary_weight) for job_batch in job_batches]
         
         with ThreadPoolExecutor(max_workers=WORKER_NUM) as executor:
@@ -223,20 +191,13 @@ async def calculate(request: Request, query: CalculateQuery):
         # Select top 50 jobs
         top_50_jobs = all_sorted_job_points[:50]
 
->>>>>>> fe7677ce451f4d1aadfb3b50db3a127aefb9f92f
     except Exception as e:
         logger.error(f"Error calculating job point: {e}")
         raise exceptions.ServerError("Error calculating job point")
 
-<<<<<<< HEAD
-    # Trả danh sách điểm công việc về FE
-    return json({'result': 'success', 'data': all_job_points})
-
-=======
     return json({
         'result': 'success',
         'top_50_jobs': top_50_jobs,
         'weighted_ideal_solution': weighted_ideal_solution,
         'weighted_negative_ideal_solution': weighted_negative_ideal_solution
     })
->>>>>>> fe7677ce451f4d1aadfb3b50db3a127aefb9f92f
