@@ -20,23 +20,23 @@ calculate_bp = Blueprint('calculate', url_prefix='/calculate')
 
 
 def calculate_company_point(user_latitude, user_longtitude, company_list):
-    location_point = dict()
+    real_distance = dict()
     company_size_point = dict()
 
     for company in company_list:
-        location_point[company['company_id']] = haversine(
+        real_distance[company['company_id']] = haversine(
             (user_latitude, user_longtitude),
             (company['latitude'], company['longitude']),
             unit=Unit.KILOMETERS
         )
         company_size_point[company['company_id']] = company['company_size']
 
-    max_location_point = max(location_point.values())
+    max_location = max(real_distance.values())
     max_company_size = max(company_size_point.values())
 
-    location_point = {k: (max_location_point - v) / max_location_point for k, v in location_point.items()}
+    location_point = {k: (max_location - v) / max_location for k, v in real_distance.items()}
     company_size_point = {k: v / max_company_size for k, v in company_size_point.items()}
-    return location_point, company_size_point
+    return real_distance,location_point, company_size_point
 
 
 def divide_jobs(jobs, num_workers):
@@ -74,6 +74,7 @@ def job_worker_process(args):
         job_point['job_title'] = job['job_title']
         job_point['experience'] = job['years_of_experience']
         job_point['salary'] = job['salary']
+        job_point['real_distance'] = real_distance[job['company_id']]
 
         # Tính điểm cho từng yếu tố
         job_point['location_point'] = location_point[job['company_id']]
@@ -151,7 +152,7 @@ async def calculate(request: Request, query: CalculateQuery):
 
     # Calculate company point
     try:
-        location_point, company_size_point = calculate_company_point(user_latitude, user_longtitude, company_list)
+        real_distance, location_point, company_size_point = calculate_company_point(user_latitude, user_longtitude, company_list)
     except Exception as e:
         logger.error(f"Error calculating company point: {e}")
         raise exceptions.ServerError("Error calculating company point")
@@ -170,8 +171,8 @@ async def calculate(request: Request, query: CalculateQuery):
         model = SentenceTransformer('all-MiniLM-L6-v2')
         job_title_embeded = model.encode(job_title)
 
-        job_batches_with_args = [(job_batch, job_title_embeded, experience, location_point, company_size_point, location_weight, company_size_weight, job_title_weight, experience_weight, salary_weight) for job_batch in job_batches]
-        
+        job_batches_with_args = [(job_batch, job_title_embeded, experience, real_distance, location_point, company_size_point, location_weight, company_size_weight, job_title_weight, experience_weight, salary_weight) for job_batch in job_batches]
+
         with ThreadPoolExecutor(max_workers=WORKER_NUM) as executor:
             futures = [executor.submit(job_worker_process, args) for args in job_batches_with_args]
         

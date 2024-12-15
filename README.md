@@ -10,7 +10,8 @@ Install dependencies
 ```shell
 pip install -r requirements.txt
 ```
-
+ python -m venv venv
+ venv\Scripts\activate  
 Run server with `python`
 ```shell
 python3 main.py
