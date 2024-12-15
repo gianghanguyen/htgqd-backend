@@ -118,8 +118,6 @@ def job_worker_process(args):
     sorted_job_points = sorted(job_points, key=lambda x: x['point'], reverse=True)
     return sorted_job_points, weighted_ideal_solution, weighted_negative_ideal_solution
 
-
-
 @calculate_bp.route('')
 @openapi.definition(
     summary="Calculate jobs' point",
@@ -189,6 +187,7 @@ async def calculate(request: Request, query: CalculateQuery):
                 raise exceptions.ServerError("Error occurred during job execution")
         
         # Select top 50 jobs
+        all_sorted_job_points = sorted(all_sorted_job_points, key=lambda x: x['point'], reverse=True)
         top_50_jobs = all_sorted_job_points[:50]
 
     except Exception as e:
