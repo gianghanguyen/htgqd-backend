@@ -54,7 +54,7 @@ def divide_jobs(jobs, num_workers):
 
 def job_worker_process(args):
     print("Start job worker process")
-    job_batch, job_title_embed, experience, location_point, company_size_point, location_weight, company_size_weight, job_title_weight, experience_weight, salary_weight = args
+    job_batch, job_title_embed, experience, real_distance, location_point, company_size_point, location_weight, company_size_weight, job_title_weight, experience_weight, salary_weight = args
 
     mongo_db = MongoDB()
 
